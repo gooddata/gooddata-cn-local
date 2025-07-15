@@ -1,0 +1,41 @@
+apiVersion: k3d.io/v1alpha5
+kind: Simple
+metadata:
+  name: gdcluster
+servers: 1
+agents: 2
+kubeAPI:
+  host: "host.docker.internal"
+  hostIP: "0.0.0.0"
+  hostPort: "6443"
+network: k3d-default
+ports:
+  - port: "443:443"
+    nodeFilters:
+      - loadbalancer
+  - port: "80:80"
+    nodeFilters:
+      - loadbalancer
+registries:
+  config: |
+    mirrors:
+      "docker.io":
+        endpoint:
+          - "https://registry-1.docker.io"
+    configs:
+      "registry-1.docker.io":
+        auth:
+          username: "${DOCKER_USERNAME}"
+          password: "${DOCKER_PASSWORD}"
+options:
+  k3d:
+    wait: true
+    timeout: "60s"
+  k3s:
+    extraArgs:
+      - arg: --disable=traefik
+        nodeFilters:
+          - server:*
+  kubeconfig:
+    updateDefaultKubeconfig: true
+    switchCurrentContext: true
