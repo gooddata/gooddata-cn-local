@@ -1,0 +1,18 @@
+# Set all services to only have 1 replica
+replicaCount: 1
+
+# Set metadata API encryption keys
+metadataApi:
+  encryptor:
+    existingSecret: gdcn-encryption
+
+# Point GoodData CN to license key
+license:
+  existingSecret: gooddata-cn-license
+
+# Set organization to serve requests on HTTP
+ingress:
+  lbProtocol: http
+  lbPort: ""
+
+deployVisualExporter: false

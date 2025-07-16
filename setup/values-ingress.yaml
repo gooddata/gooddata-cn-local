@@ -1,0 +1,7 @@
+controller:
+  config:
+    use-forwarded-headers: "true"
+  tolerations:
+    - key: "node-role.kubernetes.io/master"
+      operator: "Exists"
+      effect: "NoSchedule"
