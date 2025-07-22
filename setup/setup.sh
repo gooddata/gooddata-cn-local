@@ -45,26 +45,26 @@ LATEST_GDCN_CHART_VERSION=${LATEST_GDCN_CHART_VERSION:-3.36.0}
 ###
 # Interactive prompts for environment config
 ###
-read -e -rsp ">> GoodData.CN license key: " GDCN_LICENSE_KEY
+read -resp ">> GoodData.CN license key: " GDCN_LICENSE_KEY
 echo
 if [ -z "$GDCN_LICENSE_KEY" ]; then
   echo -e "\n\n>> ERROR: GoodData.CN license key is required" >&2
   exit 1
 fi
 
-read -e -p ">> GoodData.CN hostname [default: localhost]: " GDCN_HOSTNAME
+read -ep ">> GoodData.CN hostname [default: localhost]: " GDCN_HOSTNAME
 GDCN_HOSTNAME=${GDCN_HOSTNAME:-localhost}
 
-read -e -p ">> GoodData.CN organization ID [default: test]: " GDCN_ORG_ID
+read -ep ">> GoodData.CN organization ID [default: test]: " GDCN_ORG_ID
 GDCN_ORG_ID=${GDCN_ORG_ID:-test}
 
-read -e -p ">> GoodData.CN organization display name [default: Test, Inc.]: " GDCN_ORG_NAME
+read -ep ">> GoodData.CN organization display name [default: Test, Inc.]: " GDCN_ORG_NAME
 GDCN_ORG_NAME=${GDCN_ORG_NAME:-Test, Inc.}
 
-read -e -p ">> GoodData.CN admin username [default: admin]: " GDCN_ADMIN_USER
+read -ep ">> GoodData.CN admin username [default: admin]: " GDCN_ADMIN_USER
 GDCN_ADMIN_USER=${GDCN_ADMIN_USER:-admin}
 
-read -rsp ">> GoodData.CN admin password: " GDCN_ADMIN_PASSWORD
+read -resp ">> GoodData.CN admin password: " GDCN_ADMIN_PASSWORD
 echo
 if [ -z "$GDCN_ADMIN_PASSWORD" ]; then
   echo -e "\n\n>> ERROR: GoodData.CN admin password is required" >&2
@@ -74,26 +74,26 @@ GDCN_ADMIN_HASH=$(openssl passwd -6 "$GDCN_ADMIN_PASSWORD")
 GDCN_BOOT_TOKEN_RAW="${GDCN_ADMIN_USER}:bootstrap:${GDCN_ADMIN_PASSWORD}"
 GDCN_BOOT_TOKEN=$(printf '%s' "$GDCN_BOOT_TOKEN_RAW" | base64)
 
-read -e -p ">> GoodData.CN admin group [default: adminGroup]: " GDCN_ADMIN_GROUP
+read -ep ">> GoodData.CN admin group [default: adminGroup]: " GDCN_ADMIN_GROUP
 GDCN_ADMIN_GROUP=${GDCN_ADMIN_GROUP:-adminGroup}
 
-read -e -p ">> GoodData.CN first user email [default: admin@${GDCN_HOSTNAME}]: " GDCN_DEX_USER_EMAIL
+read -ep ">> GoodData.CN first user email [default: admin@${GDCN_HOSTNAME}]: " GDCN_DEX_USER_EMAIL
 GDCN_DEX_USER_EMAIL=${GDCN_DEX_USER_EMAIL:-admin@$GDCN_HOSTNAME}
 
-read -s -p ">> GoodData.CN first user password: " GDCN_DEX_USER_PASSWORD
+read -resp ">> GoodData.CN first user password: " GDCN_DEX_USER_PASSWORD
 echo
 if [ -z "$GDCN_DEX_USER_PASSWORD" ]; then
   echo -e "\n\n>> ERROR: GoodData.CN first user password is required" >&2
   exit 1
 fi
 
-read -e -p ">> GoodData.CN chart version [default: ${LATEST_GDCN_CHART_VERSION}]: " GDCN_CHART_VERSION
+read -ep ">> GoodData.CN chart version [default: ${LATEST_GDCN_CHART_VERSION}]: " GDCN_CHART_VERSION
 GDCN_CHART_VERSION=${GDCN_CHART_VERSION:-$LATEST_GDCN_CHART_VERSION}
 
-read -e -p ">> (optional) Docker Hub username: " DOCKER_USERNAME
+read -ep ">> (optional) Docker Hub username: " DOCKER_USERNAME
 export DOCKER_USERNAME
 
-read -rsp ">> (optional) Docker Hub password or personal access token: " DOCKER_PASSWORD
+read -resp ">> (optional) Docker Hub password or personal access token: " DOCKER_PASSWORD
 export DOCKER_PASSWORD
 
 ###
