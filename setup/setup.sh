@@ -2,6 +2,31 @@
 
 set -euo pipefail
 
+# ------------------------------------------------------------
+# Helper: run curl, surface HTTP status + response body.
+# Returns the body on STDOUT so callers can still capture it,
+# and exits non‑zero on non‑2xx to preserve existing logic.
+# ------------------------------------------------------------
+curl_json() {
+  # Execute curl and append HTTP code on a new line
+  local response status body
+  response=$(curl --silent --show-error --write-out "\n%{http_code}" "$@")
+  status=${response##*$'\n'}
+  body=${response%$'\n'*}
+
+  # Surface status and error body only when not 200/404
+  echo -e ">> HTTP status: ${status}" >&2
+  if [[ "${status}" != "200" && "${status}" != "404" ]]; then
+    echo "${body}" >&2
+  fi
+
+  # Emit body and status (body first, status last) so caller can parse
+  printf '%s\n%s\n' "${body}" "${status}"
+
+  # Non‑2xx return non‑zero so callers can still `|| true`
+  [[ "${status}" =~ ^2 ]]
+}
+
 # Check if k3d cluster 'gdcluster' already exists
 if k3d cluster list | grep -q "^gdcluster\s"; then
   echo ">> Cluster 'gdcluster' already exists. To start over, run 'k3d cluster delete gdcluster'."
@@ -20,23 +45,23 @@ LATEST_GDCN_CHART_VERSION=${LATEST_GDCN_CHART_VERSION:-3.36.0}
 ###
 # Interactive prompts for environment config
 ###
-read -rsp ">> GoodData.CN license key: " GDCN_LICENSE_KEY
+read -e -rsp ">> GoodData.CN license key: " GDCN_LICENSE_KEY
 echo
 if [ -z "$GDCN_LICENSE_KEY" ]; then
   echo -e "\n\n>> ERROR: GoodData.CN license key is required" >&2
   exit 1
 fi
 
-read -p ">> GoodData.CN hostname [default: localhost]: " GDCN_HOSTNAME
+read -e -p ">> GoodData.CN hostname [default: localhost]: " GDCN_HOSTNAME
 GDCN_HOSTNAME=${GDCN_HOSTNAME:-localhost}
 
-read -p ">> GoodData.CN organization ID [default: test]: " GDCN_ORG_ID
+read -e -p ">> GoodData.CN organization ID [default: test]: " GDCN_ORG_ID
 GDCN_ORG_ID=${GDCN_ORG_ID:-test}
 
-read -p ">> GoodData.CN organization display name [default: Test, Inc.]: " GDCN_ORG_NAME
+read -e -p ">> GoodData.CN organization display name [default: Test, Inc.]: " GDCN_ORG_NAME
 GDCN_ORG_NAME=${GDCN_ORG_NAME:-Test, Inc.}
 
-read -p ">> GoodData.CN admin username [default: admin]: " GDCN_ADMIN_USER
+read -e -p ">> GoodData.CN admin username [default: admin]: " GDCN_ADMIN_USER
 GDCN_ADMIN_USER=${GDCN_ADMIN_USER:-admin}
 
 read -rsp ">> GoodData.CN admin password: " GDCN_ADMIN_PASSWORD
@@ -49,10 +74,10 @@ GDCN_ADMIN_HASH=$(openssl passwd -6 "$GDCN_ADMIN_PASSWORD")
 GDCN_BOOT_TOKEN_RAW="${GDCN_ADMIN_USER}:bootstrap:${GDCN_ADMIN_PASSWORD}"
 GDCN_BOOT_TOKEN=$(printf '%s' "$GDCN_BOOT_TOKEN_RAW" | base64)
 
-read -p ">> GoodData.CN admin group [default: adminGroup]: " GDCN_ADMIN_GROUP
+read -e -p ">> GoodData.CN admin group [default: adminGroup]: " GDCN_ADMIN_GROUP
 GDCN_ADMIN_GROUP=${GDCN_ADMIN_GROUP:-adminGroup}
 
-read -p ">> GoodData.CN first user email [default: admin@${GDCN_HOSTNAME}]: " GDCN_DEX_USER_EMAIL
+read -e -p ">> GoodData.CN first user email [default: admin@${GDCN_HOSTNAME}]: " GDCN_DEX_USER_EMAIL
 GDCN_DEX_USER_EMAIL=${GDCN_DEX_USER_EMAIL:-admin@$GDCN_HOSTNAME}
 
 read -s -p ">> GoodData.CN first user password: " GDCN_DEX_USER_PASSWORD
@@ -62,10 +87,10 @@ if [ -z "$GDCN_DEX_USER_PASSWORD" ]; then
   exit 1
 fi
 
-read -p ">> GoodData.CN chart version [default: ${LATEST_GDCN_CHART_VERSION}]: " GDCN_CHART_VERSION
+read -e -p ">> GoodData.CN chart version [default: ${LATEST_GDCN_CHART_VERSION}]: " GDCN_CHART_VERSION
 GDCN_CHART_VERSION=${GDCN_CHART_VERSION:-$LATEST_GDCN_CHART_VERSION}
 
-read -p ">> (optional) Docker Hub username: " DOCKER_USERNAME
+read -e -p ">> (optional) Docker Hub username: " DOCKER_USERNAME
 export DOCKER_USERNAME
 
 read -rsp ">> (optional) Docker Hub password or personal access token: " DOCKER_PASSWORD
@@ -197,28 +222,41 @@ EOF
 ###
 echo -e "\n\n>> Creating first GoodData.CN user..."
 # Doing multiple retries since it can take a moment for the Organization API to become available
-for i in {1..50}; do
-  DEX_RESPONSE=$(curl -s -f http://host.docker.internal/api/v1/auth/users \
+for i in {1..200}; do
+  full=$(curl_json -X POST "http://host.docker.internal/api/v1/auth/users" \
     -H "Host: ${GDCN_HOSTNAME}" \
     -H "Authorization: Bearer ${GDCN_BOOT_TOKEN}" \
     -H "Content-type: application/json" \
-    -X POST \
     -d '{
           "email": "'"${GDCN_DEX_USER_EMAIL}"'",
           "password": "'"${GDCN_DEX_USER_PASSWORD}"'",
           "displayName": "'"${GDCN_ADMIN_USER}"'"
-        }') && break
-  echo -e "\n\n>> GoodData.CN authentication endpoint not ready, retrying in 5s..."
+        }') || true
+  http_status=$(printf '%s\n' "${full}" | tail -n1)
+  dex_response=$(printf '%s\n' "${full}" | sed '$d')
+
+  # Fatal on 400 without retry
+  if [[ "${http_status}" == "400" ]]; then
+    echo -e "\n\n>> ERROR: Received 400 error from API. Correct the problem and try again." >&2
+    exit 1
+  fi
+
+  # Break on success (2xx)
+  if [[ "${http_status}" =~ ^2 ]]; then
+    break
+  fi
+
+  echo -e "\n\n>> GoodData.CN authentication endpoint not ready. Retrying in 5s..."
   sleep 5
 done
-if [ -z "${DEX_RESPONSE:-}" ]; then
+if [ -z "${dex_response:-}" ]; then
   echo -e "\n\n>> ERROR: Failed to create first user after multiple attempts" >&2
   exit 1
 fi
-DEX_AUTH_ID=$(echo "$DEX_RESPONSE" | grep -oP '"authenticationId"\s*:\s*"\K[^"]+')
+dex_auth_id=$(echo "$dex_response" | grep -oP '"authenticationId"\s*:\s*"\K[^"]+')
 
 echo -e "\n\n>> Configuring first user in organization..."
-curl -s -f -X PATCH http://host.docker.internal/api/v1/entities/users/${GDCN_ADMIN_USER} \
+full=$(curl_json -X PATCH "http://host.docker.internal/api/v1/entities/users/${GDCN_ADMIN_USER}" \
   -H "Host: ${GDCN_HOSTNAME}" \
   -H "Authorization: Bearer ${GDCN_BOOT_TOKEN}" \
   -H "Content-Type: application/vnd.gooddata.api+json" \
@@ -227,12 +265,14 @@ curl -s -f -X PATCH http://host.docker.internal/api/v1/entities/users/${GDCN_ADM
           "id": "'"${GDCN_ADMIN_USER}"'",
           "type": "user",
           "attributes": {
-              "authenticationId": "'"${DEX_AUTH_ID}"'",
+              "authenticationId": "'"${dex_auth_id}"'",
               "email": "'"${GDCN_DEX_USER_EMAIL}"'",
               "firstname": "'"$(echo "${GDCN_DEX_USER_EMAIL}" | cut -d'@' -f1)"'",
               "lastname": ""
           }
       }
-  }'
+  }')
 
-echo -e "\n\n\n>> Organization and user setup complete. Log in at http://${GDCN_HOSTNAME} with ${GDCN_DEX_USER_EMAIL} and your chosen password."
+echo -e "\n\n\n>> Organization and user setup complete."
+echo -e ">> Log in at http://${GDCN_HOSTNAME} with ${GDCN_DEX_USER_EMAIL} and your chosen password."
+echo -e ">> If you need to make API calls, you can use this bearer token: ${GDCN_BOOT_TOKEN}"
