@@ -132,7 +132,7 @@ kubectl config use-context k3d-gdcluster
 ###
 # Install Ingress NGINX via Helm
 ###
-echo -e "\n\n>> Adding Pulsar Helm repo and installing Pulsar..."
+echo -e "\n\n>> Adding ingress-nginx repo and installing..."
 helm repo add ingress-nginx https://kubernetes.github.io/ingress-nginx
 helm repo update
 helm install ingress-nginx ingress-nginx/ingress-nginx \
