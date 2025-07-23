@@ -12,6 +12,7 @@ if docker container inspect "$CONTAINER" >/dev/null 2>&1; then
     docker start "$CONTAINER"
   fi
   echo "Attaching to $CONTAINER ..."
+  docker exec -it "$CONTAINER" bash -c "./permissions.sh"
   docker exec -it "$CONTAINER" bash
   exit 0
 fi

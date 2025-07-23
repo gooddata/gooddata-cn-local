@@ -19,7 +19,8 @@ RUN apt-get update && \
         gnupg \
         dirmngr \
         openssl \
-        apt-transport-https && \
+        apt-transport-https \
+        iputils-ping && \
     mkdir -p /etc/apt/keyrings && \
     rm -rf /var/lib/apt/lists/*
 

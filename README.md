@@ -22,7 +22,7 @@ Great for demos, PoCs, or learning the platform.
   - macOS or Linux
   - Docker
   - `curl`, `git`, and (optionally) `lsof`
-  - Host ports **80** and **5001** free
+  - Host ports **80**, **5001**, and **6443** free
 
   Here's an example on how to configure these prerequisites on a clean Debian Linux installation:
 
@@ -36,8 +36,9 @@ Great for demos, PoCs, or learning the platform.
   newgrp docker
 
   # Verify ports are unused (output of command is blank)
-  lsof -i :80
-  lsof -i :5001
+  lsof -nP -iTCP:80   -sTCP:LISTEN
+  lsof -nP -iTCP:5001 -sTCP:LISTEN
+  lsof -nP -iTCP:6443 -sTCP:LISTEN
   ```
 
 ### 2. **Clone & launch setup**
