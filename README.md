@@ -44,8 +44,8 @@ Great for demos, PoCs, or learning the platform.
 ### 2. **Clone & launch setup**
 
 ```bash
-git clone https://github.com/gooddata/gdcn-local.git
-cd gdcn-local
+git clone https://github.com/gooddata/gooddata-cn-local.git
+cd gooddata-cn-local
 ./shell.sh
 ```
 
@@ -84,7 +84,7 @@ Navigate to the hostname you configured (defaults to [`http://localhost`](http:/
 If you want to upgrade to a newer GoodData.CN version:
 
 1. Look for the latest releases in the [release notes](https://www.gooddata.com/docs/cloud-native/latest/whats-new-cn/) and note any breaking changes.
-1. Make any changes to the `./setup/customized-values-gdcn.yaml`.
+1. Make any changes to the `./setup/values-gdcn.yaml`.
 1. Run the upgrade (replacing RELEASE_VERSION with a version like `3.36.0`):
 
     ```bash
@@ -92,7 +92,7 @@ If you want to upgrade to a newer GoodData.CN version:
     GDCN_VERSION=<RELEASE_VERSION>
     helm upgrade --namespace gooddata-cn \
       --version $GDCN_VERSION \
-      -f ./customized-values-gdcn.yaml \
+      -f ./values-gdcn.yaml \
       gooddata-cn gooddata/gooddata-cn
     ```
 

@@ -2,6 +2,9 @@
 
 set -euo pipefail
 
+INGRESS_CHART_VERSION=4.12.1
+PULSAR_CHART_VERSION=3.9.0
+
 # ------------------------------------------------------------
 # Helper: run curl, surface HTTP status + response body.
 # Returns the body on STDOUT so callers can still capture it,
@@ -137,7 +140,7 @@ helm repo add ingress-nginx https://kubernetes.github.io/ingress-nginx
 helm repo update
 helm install ingress-nginx ingress-nginx/ingress-nginx \
   --namespace ingress-nginx --create-namespace \
-  --version 4.12.1 \
+  --version ${INGRESS_CHART_VERSION} \
   -f ./values-ingress.yaml
 
 # Wait for Ingress NGINX controller to be ready
@@ -155,7 +158,7 @@ helm repo add apache https://pulsar.apache.org/charts
 helm repo update
 helm install pulsar apache/pulsar \
   --namespace pulsar --create-namespace \
-  --version 3.9.0 \
+  --version ${PULSAR_CHART_VERSION} \
   -f ./values-pulsar.yaml
 
 # Wait for all non-job Pulsar pods to be Running and Ready
