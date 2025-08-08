@@ -17,7 +17,7 @@ curl_json() {
   status=${response##*$'\n'}
   body=${response%$'\n'*}
 
-  # Surface status and error body only when not 200/404
+  # Surface status and error body
   echo -e ">> HTTP status: ${status}" >&2
   if [[ "${status}" != "200" && "${status}" != "404" ]]; then
     echo "${body}" >&2
@@ -197,7 +197,7 @@ helm install gooddata-cn gooddata/gooddata-cn \
   --set-string dex.ingress.authHost="${GDCN_HOSTNAME}" \
   -f ./values-gdcn.yaml
 
-# Prompt user to check pod status
+# Check pod status
 echo -e "\n\n>> Waiting for all GoodData.CN pods to be ready..."
 kubectl wait --for=condition=ready --timeout=1800s pod -l '!job-name' -n gooddata-cn
 echo -e "\n\n>> All GoodData.CN pods are running and ready."

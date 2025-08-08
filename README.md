@@ -53,7 +53,7 @@ cd gooddata-cn-local
 
 ### 3. **Create the cluster**
 
-Inside the boostrap container, run:
+Inside the bootstrap container, run:
 
 ```bash
 ./setup.sh
@@ -105,6 +105,6 @@ If you want to upgrade to a newer GoodData.CN version:
   GDCN_VERSION=<RELEASE_VERSION>
   helm diff upgrade --color --namespace gooddata-cn \
     --version $GDCN_VERSION \
-    -f customized-values-gdcn.yaml \
+    -f values-gdcn.yaml \
     gooddata-cn gooddata/gooddata-cn
   ```
