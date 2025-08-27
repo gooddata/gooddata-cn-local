@@ -20,7 +20,7 @@ Great for demos, PoCs, or learning the platform.
 ### 1. **Prerequisites**
 
   - macOS or Linux
-  - Docker
+  - Docker (allocate at least 14 GB of memory to the Docker Engine)
   - `curl`, `git`, and (optionally) `lsof`
   - Host ports **80**, **5001**, and **6443** free
 
@@ -71,13 +71,15 @@ Navigate to the hostname you configured (defaults to [`http://localhost`](http:/
 
 ### 5. Everyday Commands (inside the toolbox shell)
 
-| Action | Command |
-|--------|---------|
-| Create cluster from scratch | `./setup.sh` |
-| Stop cluster | `k3d cluster stop gdcluster` |
-| Start cluster | `k3d cluster start gdcluster` |
-| Delete cluster | `k3d cluster delete gdcluster` |
-| Re‑enter toolbox shell from host | `./shell.sh` |
+| Action | Command | Description |
+|--------|---------|-------------|
+| Create cluster from scratch | `./setup.sh` | Interactive setup: creates k3d cluster and installs GoodData.CN |
+| Stop cluster | `k3d cluster stop gdcluster` | Stops the k3d cluster |
+| Start cluster | `k3d cluster start gdcluster` | Starts the k3d cluster |
+| Delete cluster | `k3d cluster delete gdcluster` | Deletes the k3d cluster and its resources |
+| Re‑enter toolbox shell from host | `./shell.sh` | Attaches to (or creates) the toolbox container and opens a shell |
+| Stop toolbox container | `./shell-stop.sh` | Stops the toolbox container if it is running |
+| Remove toolbox container | `./shell-rm.sh` | Confirms, then stops and removes the toolbox container (not the cluster) |
 
 ### 6. Upgrade GoodData.CN
 

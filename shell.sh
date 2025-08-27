@@ -21,7 +21,7 @@ fi
 docker build -t gdcn-local-base:latest .
 
 # Create a fresh bootstrap container and run cluster setup
-docker run -d --privileged \
+docker run -d --privileged --init \
   --name $CONTAINER \
   -v /var/run/docker.sock:/var/run/docker.sock \
   -v "$(pwd)/setup":/workspace -w /workspace \
