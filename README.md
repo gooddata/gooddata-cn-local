@@ -46,10 +46,10 @@ Great for demos, PoCs, or learning the platform.
 ```bash
 git clone https://github.com/gooddata/gooddata-cn-local.git
 cd gooddata-cn-local
-./shell.sh
+./shell.sh up
 ```
 
-`./shell.sh` builds (or re‑attaches to) the bootstrap container and drops you into an interactive shell that already has **k3d**, **kubectl**, **helm**, and other utilities installed.
+`./shell.sh up` builds (or re‑attaches to) the bootstrap container and drops you into an interactive shell that already has **k3d**, **kubectl**, **helm**, and other utilities installed.
 
 ### 3. **Create the cluster**
 
@@ -77,9 +77,9 @@ Navigate to the hostname you configured (defaults to [`http://localhost`](http:/
 | Stop cluster | `k3d cluster stop gdcluster` | Stops the k3d cluster |
 | Start cluster | `k3d cluster start gdcluster` | Starts the k3d cluster |
 | Delete cluster | `k3d cluster delete gdcluster` | Deletes the k3d cluster and its resources |
-| Re‑enter toolbox shell from host | `./shell.sh` | Attaches to (or creates) the toolbox container and opens a shell |
-| Stop toolbox container | `./shell-stop.sh` | Stops the toolbox container if it is running |
-| Remove toolbox container | `./shell-rm.sh` | Confirms, then stops and removes the toolbox container (not the cluster) |
+| Re‑enter toolbox shell from host | `./shell.sh up` | Attaches to (or creates) the toolbox container and opens a shell |
+| Stop toolbox container | `./shell.sh stop` | Stops the toolbox container if it is running |
+| Remove toolbox container | `./shell.sh rm` | Confirms, then stops and removes the toolbox container (not the cluster) |
 
 ### 6. Upgrade GoodData.CN
 
