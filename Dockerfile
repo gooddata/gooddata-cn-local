@@ -19,6 +19,7 @@ RUN apt-get update && \
         openssl \
         openjdk-17-jre-headless \
         iputils-ping \
+        git \
         wget \
         vim && \
     rm -rf /var/lib/apt/lists/*
@@ -96,6 +97,9 @@ RUN useradd -m -s /bin/bash gdcn && \
 
 WORKDIR /workspace
 USER gdcn
+
+# Install Helm plugins for the non-root user
+RUN helm plugin install https://github.com/databus23/helm-diff
 
 # Container acts as a long‑running bootstrap target
 CMD ["sleep", "infinity"]
