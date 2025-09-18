@@ -1,9 +1,11 @@
 FROM debian:bullseye
 
-ARG K3D_VERSION=v5.6.3
-ARG TINKEY_VERSION=1.11.0
+ARG K3D_VERSION=v5.8.3
+ARG TINKEY_VERSION=1.12.0
 ARG K9S_VERSION=v0.50.9
-ARG KUBECTL_MAJOR_MINOR=1.33
+ARG KUBECTL_VERSION=1.34
+ARG HELM_VERSION=v3.18.6
+ARG HELM_DIFF_VERSION=v3.12.5
 
 ARG DEBIAN_FRONTEND=noninteractive
 SHELL ["/bin/bash", "-o", "pipefail", "-c"]
@@ -59,22 +61,32 @@ RUN mkdir -p /etc/apt/keyrings && \
         docker-ce-cli && \
     rm -rf /var/lib/apt/lists/*
 
-# Install kubectl & Helm
-RUN curl -fsSL "https://pkgs.k8s.io/core:/stable:/v${KUBECTL_MAJOR_MINOR}/deb/Release.key" | \
-      gpg --dearmor -o /etc/apt/keyrings/kubernetes.gpg && \
-    echo "deb [signed-by=/etc/apt/keyrings/kubernetes.gpg] \
-          https://pkgs.k8s.io/core:/stable:/v${KUBECTL_MAJOR_MINOR}/deb/ /" \
-          > /etc/apt/sources.list.d/kubernetes.list && \
-    curl -fsSL https://baltocdn.com/helm/signing.asc | \
-      gpg --dearmor -o /etc/apt/keyrings/helm.gpg && \
-    echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/helm.gpg] \
-          https://baltocdn.com/helm/stable/debian/ all main" \
-          > /etc/apt/sources.list.d/helm.list && \
-    apt-get update && \
-    apt-get install -y --no-install-recommends \
-        kubectl \
-        helm \
-    && rm -rf /var/lib/apt/lists/*
+# Install kubectl
+RUN ARCH=$(dpkg --print-architecture) && \
+    case "$ARCH" in \
+      amd64) KUBECTL_ARCH="amd64" ;; \
+      arm64) KUBECTL_ARCH="arm64" ;; \
+      armhf) KUBECTL_ARCH="arm" ;; \
+      *) echo "Unsupported architecture: $ARCH"; exit 1 ;; \
+    esac && \
+    curl -fsSL -o /usr/local/bin/kubectl \
+      "https://dl.k8s.io/release/v${KUBECTL_VERSION}.0/bin/linux/${KUBECTL_ARCH}/kubectl" && \
+    chmod +x /usr/local/bin/kubectl
+
+# Install Helm
+RUN ARCH=$(dpkg --print-architecture) && \
+    case "$ARCH" in \
+      amd64) HELM_ARCH="amd64" ;; \
+      arm64) HELM_ARCH="arm64" ;; \
+      armhf) HELM_ARCH="arm" ;; \
+      *) echo "Unsupported architecture: $ARCH"; exit 1 ;; \
+    esac && \
+    curl -fsSL -o /tmp/helm.tar.gz \
+      "https://get.helm.sh/helm-${HELM_VERSION}-linux-${HELM_ARCH}.tar.gz" && \
+    tar -xzf /tmp/helm.tar.gz -C /tmp && \
+    mv /tmp/linux-${HELM_ARCH}/helm /usr/local/bin/helm && \
+    chmod +x /usr/local/bin/helm && \
+    rm -rf /tmp/helm.tar.gz /tmp/linux-${HELM_ARCH}
 
 # Install k9s CLI (latest GitHub release)
 RUN apt-get update && \
@@ -99,7 +111,7 @@ WORKDIR /workspace
 USER gdcn
 
 # Install Helm plugins for the non-root user
-RUN helm plugin install https://github.com/databus23/helm-diff
+RUN helm plugin install https://github.com/databus23/helm-diff --version ${HELM_DIFF_VERSION}
 
 # Container acts as a long‑running bootstrap target
 CMD ["sleep", "infinity"]
