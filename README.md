@@ -93,7 +93,7 @@ If you want to upgrade to a newer GoodData.CN version:
     helm repo update
     GDCN_VERSION=<RELEASE_VERSION>
     helm upgrade --namespace gooddata-cn \
-      --version $GDCN_VERSION \
+      --wait --version $GDCN_VERSION \
       -f ./values-gdcn.yaml \
       gooddata-cn gooddata/gooddata-cn
     ```
