@@ -30,6 +30,39 @@ curl_json() {
   [[ "${status}" =~ ^2 ]]
 }
 
+# ------------------------------------------------------------
+# Helper: securely read a password from user input with asterisk
+# feedback. Characters typed are masked with '*', supports
+# backspace, and input ends on Enter. Returns the password
+# as a string.
+# ------------------------------------------------------------
+read_password() {
+    local prompt="$1"
+    local password=""
+    local char
+
+    echo -n "$prompt" >&2
+
+    while IFS= read -r -s -n1 char; do
+        # Handle Enter key (empty char or newline)
+        if [[ -z $char ]] || [[ $char == $'\n' ]] || [[ $char == $'\r' ]]; then
+            break
+        elif [[ $char == $'\177' ]] || [[ $char == $'\b' ]]; then
+            # Handle backspace
+            if [[ ${#password} -gt 0 ]]; then
+                password="${password%?}"
+                echo -ne '\b \b' >&2
+            fi
+        else
+            password+="$char"
+            echo -n '*' >&2
+        fi
+    done
+
+    echo >&2
+    echo "$password"
+}
+
 # Check if k3d cluster 'gdcluster' already exists
 if k3d cluster list | grep -q "^gdcluster\s"; then
   echo ">> Cluster 'gdcluster' already exists. To start over, run 'k3d cluster delete gdcluster'."
@@ -48,8 +81,7 @@ LATEST_GDCN_CHART_VERSION=${LATEST_GDCN_CHART_VERSION:-3.36.0}
 ###
 # Interactive prompts for environment config
 ###
-read -resp ">> GoodData.CN license key: " GDCN_LICENSE_KEY
-echo
+GDCN_LICENSE_KEY=$(read_password ">> GoodData.CN license key: ")
 if [ -z "$GDCN_LICENSE_KEY" ]; then
   echo -e "\n\n>> ERROR: GoodData.CN license key is required" >&2
   exit 1
@@ -67,8 +99,7 @@ GDCN_ORG_NAME=${GDCN_ORG_NAME:-Test, Inc.}
 read -ep ">> GoodData.CN admin username [default: admin]: " GDCN_ADMIN_USER
 GDCN_ADMIN_USER=${GDCN_ADMIN_USER:-admin}
 
-read -resp ">> GoodData.CN admin password: " GDCN_ADMIN_PASSWORD
-echo
+GDCN_ADMIN_PASSWORD=$(read_password ">> GoodData.CN admin password: ")
 if [ -z "$GDCN_ADMIN_PASSWORD" ]; then
   echo -e "\n\n>> ERROR: GoodData.CN admin password is required" >&2
   exit 1
@@ -83,8 +114,7 @@ GDCN_ADMIN_GROUP=${GDCN_ADMIN_GROUP:-adminGroup}
 read -ep ">> GoodData.CN first user email [default: admin@${GDCN_HOSTNAME}]: " GDCN_DEX_USER_EMAIL
 GDCN_DEX_USER_EMAIL=${GDCN_DEX_USER_EMAIL:-admin@$GDCN_HOSTNAME}
 
-read -resp ">> GoodData.CN first user password: " GDCN_DEX_USER_PASSWORD
-echo
+GDCN_DEX_USER_PASSWORD=$(read_password ">> GoodData.CN first user password: ")
 if [ -z "$GDCN_DEX_USER_PASSWORD" ]; then
   echo -e "\n\n>> ERROR: GoodData.CN first user password is required" >&2
   exit 1
@@ -96,7 +126,7 @@ GDCN_CHART_VERSION=${GDCN_CHART_VERSION:-$LATEST_GDCN_CHART_VERSION}
 read -ep ">> (optional) Docker Hub username: " DOCKER_USERNAME
 export DOCKER_USERNAME
 
-read -resp ">> (optional) Docker Hub password or personal access token: " DOCKER_PASSWORD
+DOCKER_PASSWORD=$(read_password ">> (optional) Docker Hub password or personal access token: ")
 export DOCKER_PASSWORD
 
 ###
