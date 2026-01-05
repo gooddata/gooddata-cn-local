@@ -37,7 +37,6 @@ case "$cmd" in
       --name $CONTAINER \
       -v /var/run/docker.sock:/var/run/docker.sock \
       -v "$(pwd)/setup":/workspace -w /workspace \
-      -v "$(pwd)/../../github.com/gooddata/gdc-nas":/gdc-nas \
       -e HOST_PWD="$(pwd)" \
       --add-host=host.docker.internal:host-gateway \
       gdcn-local-base:latest \
