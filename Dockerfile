@@ -1,4 +1,4 @@
-FROM debian:bullseye
+FROM debian:trixie
 
 ARG K3D_VERSION=v5.8.3
 ARG TINKEY_VERSION=1.12.0
