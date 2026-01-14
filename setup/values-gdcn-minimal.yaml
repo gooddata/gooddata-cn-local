@@ -1,0 +1,157 @@
+# =============================================================================
+# GoodData.CN Minimal Installation Configuration
+# =============================================================================
+# This configuration is optimized for minimal resource consumption while
+# maintaining full core analytics functionality.
+#
+# Resource Savings vs Full Installation:
+#   - Pods: 49 vs 62 (21% reduction)
+#   - CPU Requests: ~4.6 vCPU vs ~10 vCPU (54% reduction)
+#   - Memory Requests: ~11 GB vs ~23 GB (52% reduction)
+#
+# Disabled Features:
+#   - AI Assistant and GenAI Chat
+#   - PDF/Excel Export Builder
+#   - CSV/Tabular Exports
+#   - Scheduled Automation
+#   - Data Source Schema Scanner
+#   - Admin CLI Tools
+#   - etcd HA (reduced to 1 replica)
+#
+# For full installation, see values-gdcn.yaml or enable features as needed.
+# =============================================================================
+
+# Set all services to only have 1 replica
+replicaCount: 1
+
+# Set metadata API encryption keys
+metadataApi:
+  encryptor:
+    existingSecret: gdcn-encryption
+
+# Point GoodData CN to license key
+license:
+  existingSecret: gooddata-cn-license
+
+# Ingress configuration with TLS (using cert-manager self-signed certificate)
+ingress:
+  lbProtocol: https
+  lbPort: ""
+  annotations:
+    cert-manager.io/cluster-issuer: "selfsigned-issuer"
+
+# Dex configuration with TLS
+dex:
+  ingress:
+    authHost: 'localhost'
+    tls:
+      authSecretName: 'gooddata-cn-tls-secret'  # Created by cert-manager
+    annotations:
+      cert-manager.io/cluster-issuer: "selfsigned-issuer"
+
+deployVisualExporter: false
+
+# AI features
+# When enabled, AI features add:
+#   - CPU Requests: +2.5 vCPU | CPU Limits: +5 vCPU
+#   - Memory Requests: +5.4 GB | Memory Limits: +8.5 GB
+#   - Additional pods: gen-ai, gen-ai-metadata-sync, qdrant-db
+deployGenAIService: false      # Set to true for AI assistant
+enableSemanticSearch: false    # Set to true for semantic search
+enableGenAIChat: false         # Set to true for GenAI chat
+deployGenAIMetadataSync: false # Set to true for AI metadata sync
+deployQdrant: false            # Set to true for Qdrant vector DB
+
+# etcd configuration (reduced for local development)
+# When set to 3 replicas (default HA), etcd adds:
+#   - CPU Requests: +200m | CPU Limits: +600m (for 2 extra replicas)
+#   - Memory Requests: +512Mi | Memory Limits: +1Gi (for 2 extra replicas)
+etcd:
+  replicaCount: 1  # Reduced from 3 (default) - use 3 for production HA
+
+# PostgreSQL HA configuration
+# NOTE: You can use this PostgreSQL instance for your other applications and data.
+# The deployed PostgreSQL cluster provides a robust HA setup that can be shared.
+# When deployPostgresHA: true (default), it adds:
+#   - 3x PostgreSQL pods + 2x pgpool pods
+#   - Suitable for hosting additional databases beyond GoodData.CN metadata
+# postgresql-ha:
+#   # Uncomment to customize PostgreSQL settings
+#   # pgpool:
+#   #   replicaCount: 2  # Can be reduced to 1 for non-HA local dev
+
+# =============================================================================
+# Optional GoodData.CN Components (from gooddata-common exports.flags)
+# =============================================================================
+
+# Export Builder - PDF/Excel export generation (HEAVY RESOURCE CONSUMER)
+# When enabled, adds:
+#   - CPU Requests: +2,250m | CPU Limits: +8,100m
+#   - Memory Requests: +4,765Mi (~4.6GB) | Memory Limits: +7,815Mi (~7.6GB)
+#   - Pods: export-builder (3 containers), export-controller, tabular-exporter
+deployExportBuilder: false  # Set to true to enable PDF/Excel exports
+
+# Gateway components
+# deployGateway: true       # API Gateway (required for most operations)
+# deployGatewayMdSink: false  # Metadata sink gateway
+
+# Identity Provider - Dex
+# When enabled (default), adds:
+#   - CPU Requests: 30m | CPU Limits: 100m
+#   - Memory Requests: 50Mi | Memory Limits: 50Mi
+# Disabling this requires every Organization to use an external Identity Provider
+deployDexIdP: true  # Set to false only if using external IdP for all orgs
+
+# Quiver Datasource extensions
+# deployQuiverDatasource: false      # Additional FlexQuery datasource nodes
+# deployQuiverDatasourceFs: false    # FS-based datasource capabilities
+# deployQuiverGeoCollections: false  # Geo collections support
+
+# Advanced features
+# deployDedicatedPolicyNodes: false  # Dedicated policy evaluation nodes
+# deployMCPServer: false             # MCP Server for AI integrations
+# deployAgenticWorkflows: false      # Agentic AI workflows
+
+# =============================================================================
+# Optional Services (can be disabled by setting replicaCount: 0)
+# =============================================================================
+
+# Automation service - scheduled tasks, alerts, notifications
+# When enabled (replicaCount: 1), adds:
+#   - CPU Requests: 100m | CPU Limits: 500m
+#   - Memory Requests: 450Mi | Memory Limits: 1,200Mi
+# Disable if you don't need scheduled exports, alerts, or automated workflows
+automation:
+  replicaCount: 0  # Set to 1 to enable scheduled tasks and alerts
+
+# Scan Model service - data source schema discovery and scanning
+# When enabled (replicaCount: 1), adds:
+#   - CPU Requests: 100m | CPU Limits: 500m
+#   - Memory Requests: 300Mi | Memory Limits: 560Mi
+# Disable if you don't need to scan/discover data source schemas
+scanModel:
+  replicaCount: 0  # Set to 1 to enable data source scanning
+
+# Tools service - admin CLI and maintenance utilities
+# When enabled (replicaCount: 1), adds:
+#   - CPU Requests: 10m | CPU Limits: 200m
+#   - Memory Requests: 5Mi | Memory Limits: 200Mi
+# Disable if you don't need admin CLI access inside the cluster
+tools:
+  replicaCount: 0  # Set to 1 to enable admin tools
+
+# Export Controller - orchestrates export jobs
+# When enabled (replicaCount: 1), adds:
+#   - CPU Requests: 100m | CPU Limits: 500m
+#   - Memory Requests: 560Mi | Memory Limits: 800Mi
+# Note: Related to deployExportBuilder, disable if exports not needed
+exportController:
+  replicaCount: 0  # Set to 1 to enable export orchestration
+
+# Tabular Exporter - CSV/tabular data exports
+# When enabled (replicaCount: 1), adds:
+#   - CPU Requests: 50m | CPU Limits: 200m
+#   - Memory Requests: 150Mi | Memory Limits: 250Mi
+# Disable if you don't need CSV/tabular exports
+tabularExporter:
+  replicaCount: 0  # Set to 1 to enable tabular exports
