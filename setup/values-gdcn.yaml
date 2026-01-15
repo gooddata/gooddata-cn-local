@@ -15,4 +15,9 @@ ingress:
   lbProtocol: http
   lbPort: ""
 
-deployVisualExporter: false
+# Enable AI features
+deployGenAIService: true
+enableSemanticSearch: true
+enableGenAIChat: true
+deployGenAIMetadataSync: true
+deployQdrant: true
