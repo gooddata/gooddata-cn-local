@@ -13,7 +13,7 @@ This report provides a comprehensive analysis of resource requirements for deplo
 
 ### Key Findings
 
-- **Total Pods Deployed:** 49 pods across 5 namespaces
+- **Total Pods Deployed:** 41 pods across 5 namespaces (with Pulsar Minimal)
 - **GoodData.CN Pods:** 31 pods (core services)
 - **Pulsar Pods:** 11 pods (message streaming)
 - **Infrastructure Pods:** 7 pods (kube-system, ingress, cert-manager)
@@ -41,24 +41,39 @@ This report provides a comprehensive analysis of resource requirements for deplo
 
 ## Resource Usage by Category
 
-### 1. Pulsar (Message Streaming) - 11 Pods
+### 1. Pulsar (Message Streaming)
 
-| Pod | CPU Request | CPU Limit | Memory Request | Memory Limit |
-|-----|-------------|-----------|----------------|--------------|
-| pulsar-bookie-0 | 200m | — | 128Mi | — |
-| pulsar-bookie-1 | 200m | — | 128Mi | — |
-| pulsar-bookie-2 | 200m | — | 128Mi | — |
-| pulsar-broker-0 | 200m | — | 256Mi | — |
-| pulsar-broker-1 | 200m | — | 256Mi | — |
-| pulsar-recovery-0 | 50m | — | 64Mi | — |
-| pulsar-zookeeper-0 | 100m | — | 256Mi | — |
-| pulsar-zookeeper-1 | 100m | — | 256Mi | — |
-| pulsar-zookeeper-2 | 100m | — | 256Mi | — |
-| **Pulsar Total** | **1,350m** | **—** | **1,728Mi (~1.7GB)** | **—** |
+#### Pulsar HA Configuration (11 Pods) - Original
+
+| Pod | CPU Request | Memory Request | CPU Usage | Memory Usage |
+|-----|:-----------:|:--------------:|:---------:|:------------:|
+| pulsar-bookie-0,1,2 | 200m × 3 | 128Mi × 3 | ~24m | ~819Mi |
+| pulsar-broker-0,1 | 200m × 2 | 256Mi × 2 | ~51m | ~739Mi |
+| pulsar-recovery-0 | 50m | 64Mi | ~18m | ~192Mi |
+| pulsar-zookeeper-0,1,2 | 100m × 3 | 256Mi × 3 | ~14m | ~545Mi |
+| **Pulsar HA Total** | **1,350m** | **1,728Mi** | **~107m** | **~2.2GB** |
+
+#### Pulsar Minimal Configuration (3 Pods) - Current
+
+| Pod | CPU Request | Memory Request | CPU Usage | Memory Usage |
+|-----|:-----------:|:--------------:|:---------:|:------------:|
+| pulsar-bookie-0 | 200m | 128Mi | 18m | 269Mi |
+| pulsar-broker-0 | 200m | 256Mi | 33m | 444Mi |
+| pulsar-zookeeper-0 | 100m | 256Mi | 8m | 183Mi |
+| **Pulsar Minimal Total** | **500m** | **640Mi** | **59m** | **896Mi** |
+
+#### Pulsar Savings (Minimal vs HA)
+
+| Metric | HA | Minimal | Savings |
+|--------|:--:|:-------:|:-------:|
+| **Pods** | 11 | 3 | 8 pods (73%) |
+| **CPU Requests** | 1,350m | 500m | 850m (63%) |
+| **Memory Requests** | 1,728Mi | 640Mi | 1,088Mi (63%) |
+| **Actual Memory** | ~2.2GB | ~896Mi | ~1.3GB (59%) |
 
 **Notes:**
-- Pulsar pods do not have CPU/memory limits set (can burst beyond requests)
-- 2 init pods (bookie-init, pulsar-init) complete during initialization
+- Minimal config: No HA, no data redundancy, for local dev only
+- Use `values-pulsar.yaml` for HA, `values-pulsar-minimal.yaml` for minimal
 
 ---
 
@@ -217,13 +232,13 @@ redis-ha:
 
 | Category | Pods | CPU Requests | Memory Requests | CPU Usage (Actual) | Memory Usage (Actual) |
 |----------|:----:|:------------:|:---------------:|:------------------:|:---------------------:|
-| **Pulsar** | 11 | 1,350m | 1,728Mi (~1.7 GB) | ~300m | ~1.5 GB |
+| **Pulsar (Minimal)** | 3 | 500m | 640Mi | 59m | 896Mi |
 | **PostgreSQL HA** | 5 | ~400m (est.) | ~1,792Mi (~1.8 GB) | 265m | 1,382Mi |
 | **Redis HA** | 3 | ~75m (est.) | ~96Mi | 53m | 65Mi |
 | **etcd** | 1 | 100m | 256Mi | 10m | 44Mi |
 | **GoodData.CN Core** | 22 | 2,340m | 7,193Mi (~7 GB) | ~150m | ~5.2 GB |
 | **Infrastructure** | 7 | 300m | 230Mi | ~50m | ~200Mi |
-| **Total** | **49** | **~4,565m (~4.6 vCPU)** | **~11,295Mi (~11 GB)** | **~828m** | **~8.4 GB** |
+| **Total** | **41** | **~3,715m (~3.7 vCPU)** | **~10,207Mi (~10 GB)** | **~578m** | **~7.5 GB** |
 
 ### Actual Node Resource Usage
 
