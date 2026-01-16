@@ -1,0 +1,78 @@
+# Pulsar Minimal - 3 pods instead of 11, for local dev only
+components:
+  functions: false
+  proxy: false
+  toolset: false
+  pulsar_manager: false
+  autorecovery: false
+
+defaultPulsarImageTag: 3.3.6
+
+affinity:
+  anti_affinity: false
+
+zookeeper:
+  replicaCount: 1
+  podManagementPolicy: OrderedReady
+  podMonitor:
+    enabled: false
+  restartPodsOnConfigMapChange: true
+  volumes:
+    data:
+      name: data
+      size: 2Gi
+      storageClassName: local-path
+
+bookkeeper:
+  replicaCount: 1
+  podMonitor:
+    enabled: false
+  restartPodsOnConfigMapChange: true
+  resources:
+    requests:
+      cpu: 0.2
+      memory: 128Mi
+  volumes:
+    journal:
+      name: journal
+      size: 5Gi
+      storageClassName: local-path
+    ledgers:
+      name: ledgers
+      size: 5Gi
+      storageClassName: local-path
+  configData:
+    nettyMaxFrameSizeBytes: "10485760"
+
+autorecovery:
+  podMonitor:
+    enabled: false
+
+broker:
+  replicaCount: 1
+  podMonitor:
+    enabled: false
+  restartPodsOnConfigMapChange: true
+  resources:
+    requests:
+      cpu: 0.2
+      memory: 256Mi
+  configData:
+    PULSAR_MEM: >
+      -Xms128m -Xmx256m -XX:MaxDirectMemorySize=128m
+    managedLedgerDefaultEnsembleSize: "1"
+    managedLedgerDefaultWriteQuorum: "1"
+    managedLedgerDefaultAckQuorum: "1"
+    subscriptionExpirationTimeMinutes: "5"
+    systemTopicEnabled: "true"
+    topicLevelPoliciesEnabled: "true"
+
+proxy:
+  podMonitor:
+    enabled: false
+
+kube-prometheus-stack:
+  enabled: false
+
+victoria-metrics-k8s-stack:
+  enabled: false
