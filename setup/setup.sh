@@ -3,6 +3,7 @@
 set -euo pipefail
 
 INGRESS_CHART_VERSION=4.12.1
+CNPG_CHART_VERSION=0.27.0
 PULSAR_CHART_VERSION=3.9.0
 
 # ------------------------------------------------------------
@@ -39,8 +40,10 @@ fi
 ###
 # Find latest GoodData.CN Helm release
 ###
-LATEST_GDCN_CHART_VERSION=$(curl -fs https://artifacthub.io/api/v1/packages/helm/gooddata-cn/gooddata-cn/feed/rss |
-  awk -F'[<>]' '/<item>/{getline; if ($3 ~ /^[0-9.]+$/){print $3; exit}}')
+LATEST_GDCN_CHART_VERSION=$(
+  curl -fs https://artifacthub.io/api/v1/packages/helm/gooddata-cn/gooddata-cn/feed/rss |
+    awk -F'[<>]' '/<item>/{getline; if ($3 ~ /^[0-9.]+$/){print $3; exit}}'
+) || true
 
 # Fallback to previous default if the feed is unreachable or parsing fails
 LATEST_GDCN_CHART_VERSION=${LATEST_GDCN_CHART_VERSION:-3.36.0}
@@ -151,13 +154,50 @@ done
 kubectl wait --for=condition=available --timeout=300s deployment/ingress-nginx-controller -n ingress-nginx
 
 ###
+# Install CloudNativePG operator and PostgreSQL cluster
+###
+echo -e "\n\n>> Adding CloudNativePG Helm repo and installing operator..."
+helm repo add cnpg https://cloudnative-pg.github.io/charts
+helm repo update
+helm upgrade --install cnpg \
+  --namespace cnpg-system \
+  --create-namespace \
+  --version ${CNPG_CHART_VERSION} \
+  cnpg/cloudnative-pg
+
+# Wait for operator to be ready
+echo -e "\n\n>> Waiting for CloudNativePG operator to become available..."
+until kubectl -n cnpg-system get deployment cnpg-cloudnative-pg &>/dev/null; do
+  sleep 2
+done
+kubectl wait --for=condition=available --timeout=300s deployment/cnpg-cloudnative-pg -n cnpg-system
+
+# Create the gooddata-cn namespace
+echo -e "\n\n>> Creating gooddata-cn namespace..."
+kubectl apply -f ./namespace-gdcn.yaml
+
+# Create PostgreSQL cluster
+echo -e "\n\n>> Creating PostgreSQL cluster..."
+kubectl apply -f ./postgres-cluster.yaml
+
+# Wait for PostgreSQL cluster to be ready
+echo -e "\n\n>> Waiting for PostgreSQL cluster to be ready..."
+until kubectl -n gooddata-cn get cluster postgres &>/dev/null; do
+  sleep 2
+done
+kubectl wait --for=condition=Ready --timeout=600s cluster/postgres -n gooddata-cn
+
+###
 # Install Pulsar via Helm
 ###
+echo -e "\n\n>> Creating pulsar namespace..."
+kubectl create namespace pulsar --dry-run=client -o yaml | kubectl apply -f -
+
 echo -e "\n\n>> Adding Pulsar Helm repo and installing Pulsar..."
 helm repo add apache https://pulsar.apache.org/charts
 helm repo update
 helm install pulsar apache/pulsar \
-  --namespace pulsar --create-namespace \
+  --namespace pulsar \
   --version ${PULSAR_CHART_VERSION} \
   -f ./values-pulsar.yaml
 
@@ -168,10 +208,6 @@ kubectl wait --for=condition=Ready --timeout=1800s pod -l '!job-name' -n pulsar
 ###
 # Install GoodData.CN
 ###
-
-# Create the gooddata-cn namespace
-echo -e "\n\n>> Creating gooddata-cn namespace..."
-kubectl apply -f ./namespace-gdcn.yaml
 
 # Generate encryption keyset and create secret
 echo -e "\n\n>> Generating encryption keyset..."

@@ -51,7 +51,11 @@ cd gooddata-cn-local
 
 `./shell.sh up` builds (or re‑attaches to) the bootstrap container and drops you into an interactive shell that already has **k3d**, **kubectl**, **helm**, and other utilities installed.
 
-### 3. **Create the cluster**
+### 3. **Review configuration**
+
+Review the GoodData.CN Helm chart configuration in `./setup/values-gdcn.yaml`. You can enable or disable certain GoodData features and, if needed, add other custom configuration.
+
+### 4. **Create the cluster**
 
 Inside the bootstrap container, run:
 
@@ -65,11 +69,11 @@ The script will ask you for a few details about the POC setup.
 
 This script spins up a K3d cluster called **gdcluster** and installs GoodData.CN into it.
 
-### 4. **Open the UI**
+### 5. **Open the UI**
 
 Navigate to the hostname you configured (defaults to [`http://localhost`](http://localhost)) and log in with the credentials you provided during setup.
 
-### 5. Everyday Commands (inside the toolbox shell)
+### 6. Everyday Commands (inside the toolbox shell)
 
 | Action | Command | Description |
 |--------|---------|-------------|
@@ -81,7 +85,7 @@ Navigate to the hostname you configured (defaults to [`http://localhost`](http:/
 | Stop toolbox container | `./shell.sh stop` | Stops the toolbox container if it is running |
 | Remove toolbox container | `./shell.sh rm` | Confirms, then stops and removes the toolbox container (not the cluster) |
 
-### 6. Upgrade GoodData.CN
+### 7. Upgrade GoodData.CN
 
 If you want to upgrade to a newer GoodData.CN version:
 

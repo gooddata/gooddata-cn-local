@@ -1,0 +1,44 @@
+# CloudNativePG PostgreSQL Cluster
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: postgres-superuser
+  namespace: gooddata-cn
+type: kubernetes.io/basic-auth
+stringData:
+  username: postgres
+  password: secret
+---
+apiVersion: postgresql.cnpg.io/v1
+kind: Cluster
+metadata:
+  name: postgres
+  namespace: gooddata-cn
+spec:
+  instances: 1
+  imageName: ghcr.io/cloudnative-pg/postgresql:16.4
+  primaryUpdateStrategy: unsupervised
+  enableSuperuserAccess: true
+  superuserSecret:
+    name: postgres-superuser
+
+  storage:
+    size: 2Gi
+    storageClass: local-path
+
+  bootstrap:
+    initdb:
+      database: postgres
+      owner: postgres
+      secret:
+        name: postgres-superuser
+
+  resources:
+    requests:
+      cpu: 200m
+      memory: 256Mi
+
+  postgresql:
+    pg_hba:
+      - host all all 0.0.0.0/0 scram-sha-256
