@@ -19,7 +19,7 @@ RUN apt-get update && \
         ca-certificates \
         gnupg \
         openssl \
-        openjdk-17-jre-headless \
+        openjdk-21-jre-headless \
         iputils-ping \
         git \
         wget \
