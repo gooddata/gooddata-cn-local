@@ -3,11 +3,15 @@ components:
   proxy: false
   toolset: false
   pulsar_manager: false
+  autorecovery: false
 
 defaultPulsarImageTag: 3.3.6
 
+affinity:
+  anti_affinity: false
+
 zookeeper:
-  replicaCount: 3
+  replicaCount: 1
   podManagementPolicy: OrderedReady
   podMonitor:
     enabled: false
@@ -19,7 +23,7 @@ zookeeper:
       storageClassName: local-path
 
 bookkeeper:
-  replicaCount: 3
+  replicaCount: 1
   podMonitor:
     enabled: false
   restartPodsOnConfigMapChange: true
@@ -40,15 +44,12 @@ bookkeeper:
     nettyMaxFrameSizeBytes: "10485760"
 
 autorecovery:
+  replicaCount: 0
   podMonitor:
     enabled: false
-  restartPodsOnConfigMapChange: true
-  configData:
-    BOOKIE_MEM: >
-                        -Xms64m -Xmx128m -XX:MaxDirectMemorySize=128m
 
 broker:
-  replicaCount: 2
+  replicaCount: 1
   podMonitor:
     enabled: false
   restartPodsOnConfigMapChange: true
@@ -57,11 +58,10 @@ broker:
       cpu: 0.2
       memory: 256Mi
   configData:
-    PULSAR_MEM: >
-                        -Xms128m -Xmx256m -XX:MaxDirectMemorySize=128m
-    managedLedgerDefaultEnsembleSize: "2"
-    managedLedgerDefaultWriteQuorum: "2"
-    managedLedgerDefaultAckQuorum: "2"
+    PULSAR_MEM: "-Xms128m -Xmx256m -XX:MaxDirectMemorySize=128m"
+    managedLedgerDefaultEnsembleSize: "1"
+    managedLedgerDefaultWriteQuorum: "1"
+    managedLedgerDefaultAckQuorum: "1"
     subscriptionExpirationTimeMinutes: "5"
     systemTopicEnabled: "true"
     topicLevelPoliciesEnabled: "true"

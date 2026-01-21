@@ -1,5 +1,17 @@
-# Set all services to only have 1 replica
-replicaCount: 1
+###
+# Basic configuration
+###
+
+# Disable internal PostgreSQL-HA subchart
+deployPostgresHA: false
+
+# Configure external PostgreSQL connection
+service:
+  postgres:
+    host: postgres-rw.gooddata-cn.svc.cluster.local
+    port: 5432
+    username: postgres
+    password: secret
 
 # Set metadata API encryption keys
 metadataApi:
@@ -10,9 +22,69 @@ metadataApi:
 license:
   existingSecret: gooddata-cn-license
 
-# Set organization to serve requests on HTTP
+# Set ingress to serve requests on HTTP
 ingress:
   lbProtocol: http
   lbPort: ""
 
-deployVisualExporter: false
+# Disable telemetry
+telemetry:
+  enabled: false
+
+###
+# Optional features
+###
+
+# Uncomment to enable AI features
+# deployGenAIService: true
+# enableSemanticSearch: true
+# enableGenAIChat: true
+# deployGenAIMetadataSync: true
+# deployQdrant: true
+
+# Uncomment to enable the GoodData MCP Server
+# deployMCPServer: true
+
+# Uncomment to disable default dev IdP. You must configure an external IdP for all organizations.
+# deployDexIdP: false
+
+# Uncomment to disable scheduled exports, alerts, and automated workflows
+# automation:
+#   replicaCount: 0
+
+# Uncomment to disable all export functionality
+# exportController:
+#   replicaCount: 0
+
+# Uncomment to disable only CSV/tabular exports
+# tabularExporter:
+#   replicaCount: 0
+
+# Uncomment to disable only visual exports (PNG, PDF, PPTX)
+# deployExportBuilder: false
+
+###
+# Reduce resource footprint for local environment
+###
+
+replicaCount: 1
+
+etcd:
+  replicaCount: 1
+
+redis-ha:
+  replicaCount: 1
+  hardAntiAffinity: false
+
+tools:
+  replicaCount: 0
+
+qdrant:
+  replicaCount: 1
+  config:
+    storage:
+      collection:
+        replication_factor: 1
+        write_consistency_factor: 1
+  persistence:
+    size: 1Gi
