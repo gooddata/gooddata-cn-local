@@ -73,8 +73,13 @@ etcd:
   replicaCount: 1
 
 redis-ha:
-  replicaCount: 1
+  replicas: 1
   hardAntiAffinity: false
+  redis:
+    config:
+      min-replicas-to-write: 0
+  sentinel:
+    quorum: 1
 
 tools:
   replicaCount: 0
