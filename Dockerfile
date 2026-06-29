@@ -1,4 +1,4 @@
-FROM debian:trixie
+FROM debian:trixie-20260623
 
 ARG K3D_VERSION=v5.8.3
 ARG TINKEY_VERSION=1.12.0
